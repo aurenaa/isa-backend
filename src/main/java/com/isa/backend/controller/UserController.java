@@ -21,17 +21,15 @@ public class UserController {
     private UserService userService;
 
     @GetMapping("/user/{userId}")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_USER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_USER')")
 
     public User loadById(@PathVariable Long userId) {
         return this.userService.findById(userId);
     }
 
     @GetMapping("/user/all")
-    @PreAuthorize("hasRole('ADMIN')")
-    public List<User> loadAll() {
-        return this.userService.findAll();
-    }
+    @PreAuthorize("hasRole('USER')")
+    public List<User> loadAll() { return this.userService.findAll(); }
 
     @GetMapping("/whoami")
     @PreAuthorize("hasAnyRole('USER')")
