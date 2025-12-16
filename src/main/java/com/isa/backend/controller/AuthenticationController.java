@@ -1,8 +1,11 @@
 package com.isa.backend.controller;
 
-import com.isa.backend.dto.UserRegistrationDto;
+import com.isa.backend.model.User;
 import com.isa.backend.dto.UserLoginDto;
+import com.isa.backend.dto.UserRegistrationDto;
+import com.isa.backend.dto.UserTokenStateDto;
 import com.isa.backend.service.UserService;
+import com.isa.backend.util.TokenUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -19,12 +22,19 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping(value = "/auth", produces = MediaType.APPLICATION_JSON_VALUE)
 public class AuthenticationController {
 
-    private final UserService userService;
-    private final AuthenticationManager authenticationManager;
+    @Autowired
+    private TokenUtils tokenUtils;
 
-    public AuthenticationController(UserService userService, AuthenticationManager authenticationManager) {
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private UserService userService;
+
+    public AuthenticationController(UserService userService, AuthenticationManager authenticationManager, TokenUtils tokenUtils) {
         this.userService = userService;
         this.authenticationManager = authenticationManager;
+        this.tokenUtils = tokenUtils;
     }
 
     @PostMapping("/register")
@@ -38,7 +48,7 @@ public class AuthenticationController {
     }
 
     @PostMapping("/signin")
-    public ResponseEntity<?> login(@RequestBody UserLoginDto loginRequest) {
+    public ResponseEntity<UserTokenStateDto> login(@RequestBody UserLoginDto loginRequest) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         loginRequest.getUsername(),
@@ -47,7 +57,10 @@ public class AuthenticationController {
         );
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
+        User user = (User) authentication.getPrincipal();
+        String jwt = tokenUtils.generateToken(user.getUsername());
+        int expiresIn = tokenUtils.getExpiredIn();
 
-        return ResponseEntity.ok("Login successful!");
+        return ResponseEntity.ok(new UserTokenStateDto(jwt, expiresIn));
     }
 }
