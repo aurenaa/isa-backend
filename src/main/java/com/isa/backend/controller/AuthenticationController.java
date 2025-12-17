@@ -54,6 +54,15 @@ public class AuthenticationController {
 
     @PostMapping("/signin")
     public ResponseEntity<UserTokenStateDto> login(@RequestBody UserLoginDto loginRequest) {
+        User user = userService.findByUsername(loginRequest.getUsername());
+        if (user == null) {
+            return ResponseEntity.badRequest().body(null);
+        }
+
+        if (!user.isEnabled()) {
+            throw new RuntimeException("Account not active. Check your email.");
+        }
+
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         loginRequest.getUsername(),
@@ -62,7 +71,7 @@ public class AuthenticationController {
         );
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        User user = (User) authentication.getPrincipal();
+        user = (User) authentication.getPrincipal();
         String jwt = tokenUtils.generateToken(user.getUsername());
         int expiresIn = tokenUtils.getExpiredIn();
 
