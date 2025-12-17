@@ -7,9 +7,12 @@ import com.isa.backend.dto.UserTokenStateDto;
 import com.isa.backend.service.EmailService;
 import com.isa.backend.service.UserService;
 import com.isa.backend.util.TokenUtils;
+import io.github.resilience4j.ratelimiter.RequestNotPermitted;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -52,6 +55,7 @@ public class AuthenticationController {
         }
     }
 
+    @RateLimiter(name = "ip", fallbackMethod = "ipFallback")
     @PostMapping("/signin")
     public ResponseEntity<UserTokenStateDto> login(@RequestBody UserLoginDto loginRequest) {
         User user = userService.findByUsername(loginRequest.getUsername());
@@ -89,6 +93,10 @@ public class AuthenticationController {
         user.setActivationCode(null);
         userService.saveActiveUser(user);
         return ResponseEntity.ok("Account is now active.");
+    }
+
+    public ResponseEntity<UserTokenStateDto> ipFallback(RequestNotPermitted e) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(null);
     }
 
 }
