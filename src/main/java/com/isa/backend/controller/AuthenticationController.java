@@ -7,8 +7,10 @@ import com.isa.backend.dto.UserTokenStateDto;
 import com.isa.backend.service.EmailService;
 import com.isa.backend.service.UserService;
 import com.isa.backend.util.TokenUtils;
+import io.github.resilience4j.ratelimiter.RateLimiter;
+import io.github.resilience4j.ratelimiter.RateLimiterRegistry;
 import io.github.resilience4j.ratelimiter.RequestNotPermitted;
-import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +41,9 @@ public class AuthenticationController {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private RateLimiterRegistry rateLimiterRegistry;
+
     public AuthenticationController(UserService userService, AuthenticationManager authenticationManager, TokenUtils tokenUtils) {
         this.userService = userService;
         this.authenticationManager = authenticationManager;
@@ -55,9 +60,15 @@ public class AuthenticationController {
         }
     }
 
-    @RateLimiter(name = "ip", fallbackMethod = "ipFallback")
     @PostMapping("/signin")
-    public ResponseEntity<UserTokenStateDto> login(@RequestBody UserLoginDto loginRequest) {
+    public ResponseEntity<UserTokenStateDto> login(@RequestBody UserLoginDto loginRequest, HttpServletRequest request) {
+        String ip = request.getRemoteAddr();
+
+        RateLimiter limiter = rateLimiterRegistry.rateLimiter(ip, "ip");
+        if (!limiter.acquirePermission()) {
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build();
+        }
+
         User user = userService.findByUsername(loginRequest.getUsername());
         if (user == null) {
             return ResponseEntity.badRequest().body(null);
