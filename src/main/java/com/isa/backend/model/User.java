@@ -41,6 +41,9 @@ public class User implements UserDetails {
     @Column(name = "address")
     private String address;
 
+    @Column(name = "activation_code")
+    private String activationCode;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "user_role",
             joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"),
@@ -118,6 +121,10 @@ public class User implements UserDetails {
 
     public void setAddress(String address) { this.address = address; }
 
+    public String getActivationCode() { return activationCode; }
+
+    public void setActivationCode(String activationCode) { this.activationCode = activationCode; }
+;
     @JsonIgnore
     @Override
     public boolean isAccountNonExpired() {

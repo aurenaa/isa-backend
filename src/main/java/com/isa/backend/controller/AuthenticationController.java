@@ -4,8 +4,11 @@ import com.isa.backend.model.User;
 import com.isa.backend.dto.UserLoginDto;
 import com.isa.backend.dto.UserRegistrationDto;
 import com.isa.backend.dto.UserTokenStateDto;
+import com.isa.backend.service.EmailService;
 import com.isa.backend.service.UserService;
 import com.isa.backend.util.TokenUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -13,14 +16,13 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping(value = "/auth", produces = MediaType.APPLICATION_JSON_VALUE)
 public class AuthenticationController {
+
+    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
     @Autowired
     private TokenUtils tokenUtils;
@@ -30,6 +32,9 @@ public class AuthenticationController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private EmailService emailService;
 
     public AuthenticationController(UserService userService, AuthenticationManager authenticationManager, TokenUtils tokenUtils) {
         this.userService = userService;
@@ -63,4 +68,18 @@ public class AuthenticationController {
 
         return ResponseEntity.ok(new UserTokenStateDto(jwt, expiresIn));
     }
+
+    @GetMapping("/activate")
+    public ResponseEntity<String> activateUser(@RequestParam("code") String code) {
+        User user = userService.findByActivationCode(code);
+        if (user == null) {
+            return ResponseEntity.badRequest().body("Invalid activation code.");
+        }
+
+        user.setEnabled(true);
+        user.setActivationCode(null);
+        userService.saveActiveUser(user);
+        return ResponseEntity.ok("Account is now active.");
+    }
+
 }

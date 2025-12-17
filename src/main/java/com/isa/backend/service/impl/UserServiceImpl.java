@@ -4,6 +4,7 @@ import com.isa.backend.dto.UserRegistrationDto;
 import com.isa.backend.model.Role;
 import com.isa.backend.model.User;
 import com.isa.backend.repository.UserRepository;
+import com.isa.backend.service.EmailService;
 import com.isa.backend.service.RoleService;
 import com.isa.backend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,9 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
     @Autowired
     private RoleService roleService;
+
+    @Autowired
+    private EmailService emailService;
 
     @Override
     public UserDetails loadUserByUsername(String username) {
@@ -50,6 +54,9 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     }
 
     @Override
+    public User findByActivationCode(String code) { return  userRepository.findByActivationCode(code); }
+
+    @Override
     public User save(UserRegistrationDto userRequest) {
 
         if (userRepository.findByUsername(userRequest.getUsername()) != null) {
@@ -58,17 +65,27 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
         User u = new User();
 
-        u.setEnabled(true);
+        u.setEnabled(false);
         u.setUsername(userRequest.getUsername());
         u.setPassword(passwordEncoder.encode(userRequest.getPassword()));
         u.setFirstName(userRequest.getFirstname());
         u.setLastName(userRequest.getLastname());
         u.setEmail(userRequest.getEmail());
         u.setAddress(userRequest.getAddress());
+        String activationCode = java.util.UUID.randomUUID().toString();
+        u.setActivationCode(activationCode);
 
         List<Role> roles = roleService.findByName("ROLE_USER");
         u.setRoles(roles);
 
-        return this.userRepository.save(u);
+        User savedUser = userRepository.save(u);
+
+        emailService.sendActivationEmail(savedUser);
+
+        return savedUser;
+    }
+
+    public User saveActiveUser(User user) {
+        return userRepository.save(user);
     }
 }
