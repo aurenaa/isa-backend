@@ -63,36 +63,47 @@ public class AuthenticationController {
     }
 
     @PostMapping("/signin")
-    public ResponseEntity<UserTokenStateDto> login(@RequestBody UserLoginDto loginRequest, HttpServletRequest request) {
-        String ip = request.getRemoteAddr();
+    public ResponseEntity<?> login(@RequestBody UserLoginDto loginRequest, HttpServletRequest request) {
+        try {
+            String ip = request.getRemoteAddr();
 
-        RateLimiter limiter = rateLimiterRegistry.rateLimiter(ip, "ip");
-        if (!limiter.acquirePermission()) {
-            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build();
+            RateLimiter limiter = rateLimiterRegistry.rateLimiter(ip);
+
+            boolean allowed = limiter.acquirePermission();
+            if (!allowed) {
+                return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                        .body("Too many login attempts.");
+            }
+
+            User user = userService.findByUsername(loginRequest.getUsername());
+            if (user == null) {
+                return ResponseEntity.badRequest().body(null);
+            }
+
+            if (!user.isEnabled()) {
+                throw new RuntimeException("Account not active. Check your email.");
+            }
+
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            loginRequest.getUsername(),
+                            loginRequest.getPassword()
+                    )
+            );
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            user = (User) authentication.getPrincipal();
+            String jwt = tokenUtils.generateToken(user.getUsername());
+            int expiresIn = tokenUtils.getExpiredIn();
+
+            return ResponseEntity.ok(new UserTokenStateDto(jwt, expiresIn));
+
+        } catch (Exception e) {
+            System.out.println("Login error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Invalid username or password");
         }
-
-        User user = userService.findByUsername(loginRequest.getUsername());
-        if (user == null) {
-            return ResponseEntity.badRequest().body(null);
-        }
-
-        if (!user.isEnabled()) {
-            throw new RuntimeException("Account not active. Check your email.");
-        }
-
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        loginRequest.getUsername(),
-                        loginRequest.getPassword()
-                )
-        );
-
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        user = (User) authentication.getPrincipal();
-        String jwt = tokenUtils.generateToken(user.getUsername());
-        int expiresIn = tokenUtils.getExpiredIn();
-
-        return ResponseEntity.ok(new UserTokenStateDto(jwt, expiresIn));
     }
 
     @GetMapping("/activate")
