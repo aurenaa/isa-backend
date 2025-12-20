@@ -1,17 +1,26 @@
 package com.isa.backend.dto;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 public class UserRegistrationDto {
 
     private Long id;
 
+    @NotBlank
     private String username;
 
+    @NotBlank
+    @Size(min = 6)
     private String password;
 
     private String firstname;
 
     private String lastname;
 
+    @NotBlank
+    @Email
     private String email;
 
     private String address;
@@ -40,9 +49,7 @@ public class UserRegistrationDto {
         this.firstname = firstname;
     }
 
-    public String getLastname() {
-        return lastname;
-    }
+    public String getLastname() { return lastname; }
 
     public void setLastname(String lastname) {
         this.lastname = lastname;
