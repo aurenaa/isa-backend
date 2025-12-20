@@ -119,8 +119,10 @@ public class AuthenticationController {
         return ResponseEntity.ok("Account is now active.");
     }
 
-    public ResponseEntity<UserTokenStateDto> ipFallback(RequestNotPermitted e) {
-        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(null);
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout() {
+        SecurityContextHolder.clearContext();
+        return ResponseEntity.ok("Successfully logged out");
     }
 
 }
