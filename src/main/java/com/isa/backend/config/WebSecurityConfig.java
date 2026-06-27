@@ -78,7 +78,6 @@ public class WebSecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/videos/*/view").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/comments/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/comments/**").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/videos/upload").hasRole("USER")
                         .requestMatchers("/api/videos/*/view").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/socket/**").permitAll()

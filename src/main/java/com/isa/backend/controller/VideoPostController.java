@@ -6,7 +6,6 @@ import com.isa.backend.model.VideoPost;
 import com.isa.backend.service.PopularVideosService;
 import com.isa.backend.service.VideoService;
 import jakarta.servlet.http.HttpServletRequest;
-import com.isa.backend.service.impl.PopularVideosServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.support.ResourceRegion;
 import org.springframework.http.HttpHeaders;

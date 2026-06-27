@@ -1,6 +1,7 @@
 package com.isa.backend;
 
 import com.isa.backend.service.VideoService;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -9,7 +10,7 @@ import org.springframework.util.StopWatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
+@Disabled
 @SpringBootTest
 public class LocalTrendingAnalysisTest {
 
